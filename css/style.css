@@ -226,7 +226,8 @@ h1 {
   position: fixed;
   top: 16px;
   left: 16px;
-  z-index: 10000;
+  z-index: 2147483647 !important;
+  isolation: isolate;
   width: 60px;
   height: 60px;
   padding: 2px;
@@ -336,7 +337,7 @@ body.chaos-disco main {
   to { filter: hue-rotate(160deg); }
 }
 @media (max-width: 700px) {
-  .chaos-button { top: 10px; left: 10px; width: 52px; height: 52px; }
+  .chaos-button { top: 10px; left: 10px; width: 52px; height: 52px; z-index: 2147483647 !important; }
   .chaos-modal { padding: 12px; }
   .chaos-dialog { height: 82vh; padding: 8px; }
   .chaos-close { top: -10px; right: -8px; }

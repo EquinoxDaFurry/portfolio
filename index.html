@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#ffffff">
   <meta name="description" content="Equinox's personal website — projects, code, and things I'm learning.">
   <title>Equinox — Developer</title>
-  <link rel="stylesheet" href="./css/style.css?v=17">
+  <link rel="stylesheet" href="./css/style.css?v=18">
 </head>
 <body>
   <button class="chaos-button" type="button" aria-label="Open the chaos button" title="Do not press this button.">
@@ -116,6 +116,7 @@
   backgroundAudio.volume = 0.28;
   let soundtrackStarted = false;
   let pinballInstances = [];
+  let pinballSpawnInterval = 0;
   let physicsItems = [], animationFrame = 0, lastFrame = 0;
   let pointer = { x: -1000, y: -1000, active: false };
   let toastTimer = 0, discoInterval = 0, discoTimeout = 0;
@@ -379,13 +380,8 @@
       raf = requestAnimationFrame(move);
     };
     raf = requestAnimationFrame(move);
-    const finish = setTimeout(() => {
-      cancelAnimationFrame(raf);
-      crewmate.remove();
-      pinballInstances = pinballInstances.filter(instance => instance.element !== crewmate);
-      showToast('The crewmate has left the arena.');
-    }, 15000);
-    pinballInstances.push({ element: crewmate, stop: () => { cancelAnimationFrame(raf); clearTimeout(finish); crewmate.remove(); } });
+    // Pinballs are permanent: each crewmate keeps its own animation loop.
+    pinballInstances.push({ element: crewmate, stop: () => cancelAnimationFrame(raf) });
     showToast('SUS PINBALL. BOUNCE, LITTLE CREWMATE, BOUNCE.');
   }
   function startRareAmongUsReveal() {
@@ -440,6 +436,29 @@
     // Sometimes the button does absolutely nothing. A feature, not a bug.
   }
   button.addEventListener('click',runRandomThing);
+  function startPinballSpawner() {
+    if (pinballSpawnInterval) {
+      showToast('The pinball factory is already running. One crewmate every 5 seconds.');
+      return;
+    }
+    startAmongUsPinball();
+    pinballSpawnInterval = setInterval(startAmongUsPinball, 5000);
+    showToast('OPENGL PINBALL FACTORY: one new crewmate every 5 seconds. Forever.');
+  }
+  document.querySelectorAll('.ticker-item img[alt="GLSL"]').forEach(icon => {
+    const item = icon.closest('.ticker-item');
+    item.style.cursor = 'pointer';
+    item.addEventListener('click', startPinballSpawner);
+    item.setAttribute('role', 'button');
+    item.setAttribute('tabindex', '0');
+    item.setAttribute('aria-label', 'Start the Among Us pinball factory');
+    item.addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        startPinballSpawner();
+      }
+    });
+  });
   document.querySelectorAll('.ticker-item img[alt="Rust"]').forEach(icon => {
     icon.closest('.ticker-item').style.cursor = 'pointer';
     icon.closest('.ticker-item').addEventListener('click', startRareAmongUsReveal);

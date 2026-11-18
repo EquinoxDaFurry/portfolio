@@ -3,92 +3,76 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f8f5ef">
-  <meta name="description" content="Equinox's personal corner of the internet.">
-  <title>Equinox</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./css/style.css?v=3">
-  <script src="./js/script.js?v=3" defer></script>
-  <style>
-    /* Small safety net: the page stays readable if the external stylesheet is delayed. */
-    img { max-width: 100%; }
-    .portrait-wrap { width: min(330px, 100%); max-width: 100%; justify-self: center; }
-    .portrait-shape { width: 290px; height: 290px; max-width: 100%; overflow: hidden; border-radius: 48% 52% 45% 55% / 52% 43% 57% 48%; background: #ead9d7; }
-    .portrait { display: block; width: 100%; height: 100%; max-width: 100%; object-fit: contain; }
-    @media (max-width: 720px) { .portrait-wrap { width: 210px; } .portrait-shape { width: 190px; height: 190px; } }
-  </style>
+  <meta name="theme-color" content="#ffffff">
+  <meta name="description" content="Equinox's personal website — projects, code, and things I'm learning.">
+  <title>Equinox — Developer</title>
+  <link rel="stylesheet" href="./css/style.css?v=4">
 </head>
 <body>
-  <header class="topbar">
-    <a class="wordmark" href="#top">equinox<span>✳</span></a>
+  <header class="site-header">
+    <a class="brand" href="#home">equinox<span>.</span></a>
     <nav aria-label="Main navigation">
-      <a href="#projects">work</a>
-      <a href="#about">about</a>
-      <a href="https://github.com/EquinoxDaFurry" target="_blank" rel="noopener noreferrer">github ↗</a>
+      <a href="#projects">Projects</a>
+      <a href="#about">About</a>
+      <a href="https://github.com/EquinoxDaFurry" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
     </nav>
   </header>
 
-  <main id="top">
-    <section class="intro wrap">
-      <div class="intro-copy">
-        <p class="tiny-label"><span class="tiny-dot"></span> welcome to my little corner</p>
-        <h1>hey, i'm<br><span>equinox.</span></h1>
-        <p class="intro-line">i code, experiment, and make things.</p>
-        <p class="intro-small">Mostly software, sometimes graphics, always figuring something out.</p>
-        <a class="underlined-link" href="#projects">see what i've been making <span>↓</span></a>
-      </div>
-      <div class="portrait-wrap">
-        <span class="portrait-note note-one">that's me!</span>
-        <div class="portrait-shape">
-          <img src="assets/bleh.png" alt="Equinox's profile picture" class="portrait">
+  <section class="ticker-section" aria-label="Technologies I use">
+    <div class="ticker-heading">TOOLS & TECHNOLOGIES</div>
+    <div class="ticker-window">
+      <div class="ticker-track">
+        <div class="ticker-group">
+          <span>Python</span><span>HTML</span><span>CSS</span><span>JavaScript</span><span>Git</span><span>Java</span><span>Rust</span><span>Kotlin</span><span>Vulkan</span><span>GLSL</span>
         </div>
-        <span class="portrait-note note-two">✳</span>
-      </div>
-      <span class="side-caption">INTERNET PERSON · DEVELOPER · WORK IN PROGRESS</span>
-    </section>
-
-    <section class="tech-strip" aria-label="Technologies">
-      <div class="strip-label">things i use</div>
-      <div class="ticker" tabindex="0" aria-label="Technology logos. Hover or focus to pause the animation.">
-        <div class="ticker-track">
-          <div class="ticker-group" data-ticker-group></div>
-          <div class="ticker-group" data-ticker-group aria-hidden="true"></div>
+        <div class="ticker-group" aria-hidden="true">
+          <span>Python</span><span>HTML</span><span>CSS</span><span>JavaScript</span><span>Git</span><span>Java</span><span>Rust</span><span>Kotlin</span><span>Vulkan</span><span>GLSL</span>
         </div>
       </div>
+    </div>
+  </section>
+
+  <main>
+    <section class="hero page-width" id="home">
+      <div class="hero-photo">
+        <img src="./assets/bleh.png" alt="Equinox's profile picture" width="320" height="320">
+      </div>
+      <div class="hero-copy">
+        <p class="eyebrow">HELLO, INTERNET.</p>
+        <h1>Hey, I'm Equinox.</h1>
+        <p class="intro">I like coding, learning how things work, and making projects just because I can.</p>
+        <p class="supporting">I work with Python, web technologies, and lower-level graphics tools. This is where I'll keep the things I'm building.</p>
+        <a class="text-link" href="#projects">Take a look at my work <span aria-hidden="true">↓</span></a>
+      </div>
     </section>
 
-    <section class="work wrap" id="projects">
-      <div class="section-top">
-        <span class="section-number">01 /</span>
-        <h2>stuff i've made<span class="pink">.</span></h2>
+    <section class="content-section page-width" id="projects">
+      <div class="section-heading">
+        <p class="eyebrow">01 / PROJECTS</p>
+        <h2>Things I've made</h2>
       </div>
-      <p class="section-aside">A few projects will live here soon. I'm picking out the ones I want to show off.</p>
-      <a class="github-line" href="https://github.com/EquinoxDaFurry" target="_blank" rel="noopener noreferrer">
-        <span>For now, you can find my code on GitHub.</span><span aria-hidden="true">↗</span>
+      <p class="section-copy">I'm still putting this section together. In the meantime, my code and experiments are on GitHub.</p>
+      <a class="github-card" href="https://github.com/EquinoxDaFurry" target="_blank" rel="noopener noreferrer">
+        <span><strong>Find me on GitHub</strong><small>Browse my repositories and projects</small></span>
+        <span class="arrow" aria-hidden="true">↗</span>
       </a>
     </section>
 
-    <section class="about wrap" id="about">
-      <div class="section-top">
-        <span class="section-number">02 /</span>
-        <h2>a bit about me<span class="pink">.</span></h2>
+    <section class="content-section about-section page-width" id="about">
+      <div class="section-heading">
+        <p class="eyebrow">02 / ABOUT</p>
+        <h2>A little about me</h2>
       </div>
-      <div class="about-content">
-        <p>I'm Equinox. I like making things with code and learning how the bits underneath actually work.</p>
-        <p>I've been exploring Python, web development, Java, Rust, Kotlin, and graphics with Vulkan and GLSL. This site is a little home for the things I build along the way.</p>
-        <div class="language-list" aria-label="Technologies I use">
-          <span>Python</span><span>HTML / CSS / JS</span><span>Java</span><span>Rust</span><span>Kotlin</span><span>Vulkan / GLSL</span><span>Git</span>
-        </div>
+      <div class="about-copy">
+        <p>I'm Equinox, and I enjoy building things with code and exploring how software works under the hood.</p>
+        <p>I've been learning Python, HTML, CSS, JavaScript, Java, Rust, Kotlin, Git, Vulkan, and GLSL. I'm interested in programming, graphics, and trying out ideas that seem fun.</p>
       </div>
     </section>
   </main>
 
-  <footer class="footer wrap">
-    <span>made by equinox <span class="pink">♡</span></span>
-    <a href="#top">back to top ↑</a>
-    <span class="footer-year">just existing on the internet</span>
+  <footer class="site-footer page-width">
+    <span>© Equinox</span>
+    <a href="#home">Back to top ↑</a>
   </footer>
 </body>
 </html>

@@ -22,7 +22,7 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 
 /* Continuous technology ticker, placed directly under the hero. */
 .ticker-section {
-  min-height: 112px;
+  min-height: 136px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -31,7 +31,7 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
   background: #fafafa;
 }
 .ticker-window {
-  width: min(100%, 1200px);
+  width: 100%;
   min-width: 0;
   margin-inline: auto;
   overflow: hidden;
@@ -43,20 +43,26 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
   animation: ticker-scroll 22s linear infinite;
   will-change: transform;
 }
-.ticker-group { display: flex; flex: 0 0 auto; align-items: center; width: max-content; }
-.ticker-item { flex: 0 0 auto; }
+.ticker-group {
+  display: flex;
+  flex: 0 0 100vw;
+  align-items: center;
+  width: 100vw;
+}
 .ticker-item {
   display: inline-flex;
+  flex: 0 0 10%;
   align-items: center;
-  gap: 13px;
-  min-height: 54px;
-  padding: 0 32px;
-  border-right: 1px solid #e5e5e5;
-  color: #555;
-  font-size: 16px;
-  white-space: nowrap;
+  justify-content: center;
+  min-height: 80px;
+  padding: 0;
 }
-.ticker-item img { display: block; width: 27px; height: 27px; object-fit: contain; }
+.ticker-item img {
+  display: block;
+  width: clamp(40px, 3.5vw, 64px);
+  height: clamp(40px, 3.5vw, 64px);
+  object-fit: contain;
+}
 .ticker-fallback {
   width: 27px; height: 27px; display: inline-grid; place-items: center;
   border: 1px solid #d7d7d7; border-radius: 50%; color: var(--accent);
@@ -151,8 +157,9 @@ h1 {
 
 @media (max-width: 700px) {
   .page-width { width: calc(100% - 40px); }
-  .ticker-section { min-height: 96px; padding-block: 12px; }
-  .ticker-item { padding-inline: 22px; font-size: 14px; }
+  .ticker-section { min-height: 104px; padding-block: 8px; }
+  .ticker-item { min-height: 72px; }
+  .ticker-item img { width: clamp(28px, 7vw, 36px); height: clamp(28px, 7vw, 36px); }
   .hero { min-height: 0; grid-template-columns: minmax(0, 1fr); gap: 28px; padding-top: 42px; padding-bottom: 48px; }
   .hero-photo { justify-content: flex-start; }
   .hero-photo img { width: min(65vw, 260px); }

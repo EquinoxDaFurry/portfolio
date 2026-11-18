@@ -22,7 +22,7 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 
 /* Continuous technology ticker, placed directly under the hero. */
 .ticker-section {
-  min-height: 136px;
+  min-height: 112px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -31,7 +31,7 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
   background: #fafafa;
 }
 .ticker-window {
-  width: 100%;
+  width: min(100%, 1200px);
   min-width: 0;
   margin-inline: auto;
   overflow: hidden;
@@ -45,22 +45,22 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 }
 .ticker-group {
   display: flex;
-  flex: 0 0 100vw;
+  flex: 0 0 min(100vw, 1200px);
   align-items: center;
-  width: 100vw;
+  width: min(100vw, 1200px);
 }
 .ticker-item {
   display: inline-flex;
   flex: 0 0 10%;
   align-items: center;
   justify-content: center;
-  min-height: 80px;
+  min-height: 72px;
   padding: 0;
 }
 .ticker-item img {
   display: block;
-  width: clamp(40px, 3.5vw, 64px);
-  height: clamp(40px, 3.5vw, 64px);
+  width: 44px;
+  height: 44px;
   object-fit: contain;
 }
 .ticker-fallback {
@@ -157,9 +157,10 @@ h1 {
 
 @media (max-width: 700px) {
   .page-width { width: calc(100% - 40px); }
-  .ticker-section { min-height: 104px; padding-block: 8px; }
-  .ticker-item { min-height: 72px; }
-  .ticker-item img { width: clamp(28px, 7vw, 36px); height: clamp(28px, 7vw, 36px); }
+  .ticker-section { min-height: 96px; padding-block: 8px; }
+  .ticker-group { flex-basis: 100vw; width: 100vw; }
+  .ticker-item { min-height: 64px; }
+  .ticker-item img { width: 32px; height: 32px; }
   .hero { min-height: 0; grid-template-columns: minmax(0, 1fr); gap: 28px; padding-top: 42px; padding-bottom: 48px; }
   .hero-photo { justify-content: flex-start; }
   .hero-photo img { width: min(65vw, 260px); }

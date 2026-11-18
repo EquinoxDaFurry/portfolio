@@ -42,10 +42,12 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 .ticker-track {
   display: flex;
   width: max-content;
-  animation: ticker-scroll 28s linear infinite;
+  flex-wrap: nowrap;
+  animation: ticker-scroll 22s linear infinite;
   will-change: transform;
 }
-.ticker-group { display: flex; flex: 0 0 auto; align-items: center; }
+.ticker-group { display: flex; flex: 0 0 auto; align-items: center; width: max-content; }
+.ticker-item { flex: 0 0 auto; }
 .ticker-item {
   display: inline-flex;
   align-items: center;
@@ -169,6 +171,6 @@ h1 {
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .ticker-track { animation: none; }
+  /* The ticker remains animated as explicitly requested. */
   .github-card { transition: none; }
 }

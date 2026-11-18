@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#ffffff">
   <meta name="description" content="Equinox's personal website — projects, code, and things I'm learning.">
   <title>Equinox — Developer</title>
-  <link rel="stylesheet" href="./css/style.css?v=12">
+  <link rel="stylesheet" href="./css/style.css?v=13">
 </head>
 <body>
   <button class="chaos-button" type="button" aria-label="Open the chaos button" title="Do not press this button.">
@@ -16,6 +16,7 @@
     <div class="chaos-dialog">
       <button class="chaos-close" type="button" aria-label="Close game">×</button>
       <iframe class="chaos-frame" title="Sans fight" src="about:blank" allow="fullscreen; gamepad; autoplay" allowfullscreen></iframe>
+      <video class="chaos-video" hidden controls playsinline preload="auto"></video>
     </div>
   </div>
   <div class="chaos-toast" role="status" aria-live="polite"></div>
@@ -110,26 +111,42 @@
   const closeButton = document.querySelector('.chaos-close');
   const toast = document.querySelector('.chaos-toast');
   const frame = document.querySelector('.chaos-frame');
-  let physicsItems = [];
-  let animationFrame = 0;
-  let lastFrame = 0;
+  const video = document.querySelector('.chaos-video');
+  let physicsItems = [], animationFrame = 0, lastFrame = 0;
   let pointer = { x: -1000, y: -1000, active: false };
-  let toastTimer = 0;
-  let discoInterval = 0;
-  let discoTimeout = 0;
-  let swapTimeout = 0;
-  let mirrorTimeout = 0;
-  let physicsRestoreClick = null;
-  let discoStyles = [];
-  let swapStyles = [];
+  let toastTimer = 0, discoInterval = 0, discoTimeout = 0;
+  let swapTimeout = 0, mirrorTimeout = 0, effectTimers = [];
+  let physicsRestoreClick = null, discoStyles = [], swapStyles = [];
 
   function showToast(message) {
     toast.textContent = message;
     toast.classList.add('is-visible');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toast.classList.remove('is-visible'), 2600);
+    toastTimer = setTimeout(() => toast.classList.remove('is-visible'), 2800);
   }
-
+  function later(fn, delay) {
+    const timer = setTimeout(fn, delay);
+    effectTimers.push(timer);
+    return timer;
+  }
+  function clearEffects() {
+    effectTimers.forEach(clearTimeout);
+    effectTimers = [];
+    clearInterval(discoInterval);
+    clearTimeout(discoTimeout);
+    clearTimeout(swapTimeout);
+    clearTimeout(mirrorTimeout);
+    document.body.classList.remove('chaos-mirror', 'chaos-spin', 'chaos-bounce', 'chaos-invert', 'chaos-big');
+    document.querySelectorAll('.chaos-confetti').forEach(el => el.remove());
+    if (discoStyles.length) {
+      discoStyles.forEach(({el, style}) => { el.style.cssText = style; });
+      discoStyles = [];
+    }
+    if (swapStyles.length) {
+      swapStyles.forEach(({el, style}) => { el.style.cssText = style; });
+      swapStyles = [];
+    }
+  }
   function stopPhysics() {
     if (animationFrame) cancelAnimationFrame(animationFrame);
     animationFrame = 0;
@@ -143,261 +160,192 @@
     button.classList.remove('is-chaotic');
     button.setAttribute('aria-label', 'Open the chaos button');
   }
-
   function getFloatingElements() {
-    const selector = 'img, h1, h2, p, a, button, .ticker-item, .project-card, .eyebrow, .site-footer span';
-    const candidates = Array.from(document.querySelectorAll(selector));
+    const candidates = Array.from(document.querySelectorAll(
+      'img, h1, h2, p, a, button, .ticker-item, .project-card, .eyebrow, .site-footer span'
+    ));
     const visible = candidates.filter(el => {
       if (el.closest('.chaos-modal, .chaos-toast')) return false;
-      const rect = el.getBoundingClientRect();
-      const style = getComputedStyle(el);
-      return rect.width > 4 && rect.height > 4 &&
-        style.display !== 'none' && style.visibility !== 'hidden' &&
-        Number(style.opacity) > 0;
+      const r = el.getBoundingClientRect(), s = getComputedStyle(el);
+      return r.width > 4 && r.height > 4 && s.display !== 'none' &&
+        s.visibility !== 'hidden' && Number(s.opacity) > 0;
     });
     return visible.filter(el => !visible.some(other => other !== el && other.contains(el)));
   }
-
   function startPhysics() {
     stopPhysics();
     physicsItems = getFloatingElements().map((el, index) => {
-      const rect = el.getBoundingClientRect();
-      const originalStyle = el.style.cssText;
+      const r = el.getBoundingClientRect(), originalStyle = el.style.cssText;
       el.style.setProperty('position', 'fixed', 'important');
-      el.style.setProperty('left', rect.left + 'px', 'important');
-      el.style.setProperty('top', rect.top + 'px', 'important');
-      el.style.setProperty('width', rect.width + 'px', 'important');
-      el.style.setProperty('height', rect.height + 'px', 'important');
+      el.style.setProperty('left', r.left + 'px', 'important');
+      el.style.setProperty('top', r.top + 'px', 'important');
+      el.style.setProperty('width', r.width + 'px', 'important');
+      el.style.setProperty('height', r.height + 'px', 'important');
       el.style.setProperty('margin', '0', 'important');
       el.style.setProperty('transform', 'none', 'important');
       el.style.setProperty('transition', 'none', 'important');
       el.style.setProperty('z-index', el.classList.contains('chaos-button') ? '10000' : String(100 + index), 'important');
-      el.style.setProperty('pointer-events', 'auto', 'important');
-      return {
-        el, originalStyle, x: rect.left, y: rect.top,
-        w: rect.width, h: rect.height,
-        vx: (Math.random() - 0.5) * 260,
-        vy: (Math.random() - 0.5) * 180,
-        angle: 0, spin: (Math.random() - 0.5) * 2.8
-      };
+      return { el, originalStyle, x:r.left, y:r.top, w:r.width, h:r.height,
+        vx:(Math.random()-.5)*260, vy:(Math.random()-.5)*180,
+        angle:0, spin:(Math.random()-.5)*2.8 };
     });
-
     physicsRestoreClick = event => {
       if (!physicsItems.length) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      stopPhysics();
-      showToast('Reality restored. you clicked the reset button.');
+      event.preventDefault(); event.stopImmediatePropagation();
+      stopPhysics(); showToast('Reality restored. Excellent clicking.');
     };
     document.addEventListener('click', physicsRestoreClick, true);
     button.classList.add('is-chaotic');
     button.setAttribute('aria-label', 'Click any flying object to restore the page');
     showToast('PHYSICS MODE: click ANY flying object to restore reality.');
-
     function tick(timestamp) {
       if (!physicsItems.length) return;
-      const dt = Math.min((timestamp - (lastFrame || timestamp)) / 1000, 0.032);
+      const dt = Math.min((timestamp-(lastFrame||timestamp))/1000,.032);
       lastFrame = timestamp;
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      const gravity = 1450;
-
       physicsItems.forEach(item => {
-        item.vy += gravity * dt;
-        item.x += item.vx * dt;
-        item.y += item.vy * dt;
-        item.angle += item.spin * dt;
-        if (item.x < 0) { item.x = 0; item.vx = Math.abs(item.vx) * 0.82; }
-        if (item.x + item.w > width) { item.x = width - item.w; item.vx = -Math.abs(item.vx) * 0.82; }
-        if (item.y < 0) { item.y = 0; item.vy = Math.abs(item.vy) * 0.78; }
-        if (item.y + item.h > height) {
-          item.y = height - item.h;
-          item.vy = -Math.abs(item.vy) * 0.72;
-          item.vx *= 0.985;
-          if (Math.abs(item.vy) < 42) item.vy = -90 - Math.random() * 80;
+        item.vy += 1450*dt; item.x += item.vx*dt; item.y += item.vy*dt;
+        item.angle += item.spin*dt;
+        if (item.x<0) { item.x=0; item.vx=Math.abs(item.vx)*.82; }
+        if (item.x+item.w>innerWidth) { item.x=innerWidth-item.w; item.vx=-Math.abs(item.vx)*.82; }
+        if (item.y<0) { item.y=0; item.vy=Math.abs(item.vy)*.78; }
+        if (item.y+item.h>innerHeight) {
+          item.y=innerHeight-item.h; item.vy=-Math.abs(item.vy)*.72;
+          item.vx*=.985; if (Math.abs(item.vy)<42) item.vy=-90-Math.random()*80;
         }
         if (pointer.active) {
-          const dx = item.x + item.w / 2 - pointer.x;
-          const dy = item.y + item.h / 2 - pointer.y;
-          const distance = Math.hypot(dx, dy) || 1;
-          if (distance < 105) {
-            const force = (105 - distance) / 105;
-            item.vx += (dx / distance) * force * 1900 * dt;
-            item.vy += (dy / distance) * force * 1900 * dt;
-          }
+          const dx=item.x+item.w/2-pointer.x, dy=item.y+item.h/2-pointer.y;
+          const d=Math.hypot(dx,dy)||1;
+          if (d<105) { const f=(105-d)/105; item.vx+=dx/d*f*1900*dt; item.vy+=dy/d*f*1900*dt; }
         }
       });
-
-      for (let i = 0; i < physicsItems.length; i++) {
-        for (let j = i + 1; j < physicsItems.length; j++) {
-          const a = physicsItems[i], b = physicsItems[j];
-          const dx = (b.x + b.w / 2) - (a.x + a.w / 2);
-          const dy = (b.y + b.h / 2) - (a.y + a.h / 2);
-          const distance = Math.hypot(dx, dy) || 0.01;
-          const overlap = Math.max(12, Math.min(a.w, a.h) * 0.34) +
-            Math.max(12, Math.min(b.w, b.h) * 0.34) - distance;
-          if (overlap > 0) {
-            const nx = dx / distance, ny = dy / distance;
-            const push = overlap * 0.52;
-            a.x -= nx * push; a.y -= ny * push;
-            b.x += nx * push; b.y += ny * push;
-            const relative = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
-            if (relative < 0) {
-              const impulse = -relative * 0.78;
-              a.vx -= impulse * nx; a.vy -= impulse * ny;
-              b.vx += impulse * nx; b.vy += impulse * ny;
-            }
-          }
+      for (let i=0;i<physicsItems.length;i++) for (let j=i+1;j<physicsItems.length;j++) {
+        const a=physicsItems[i], b=physicsItems[j];
+        const dx=b.x+b.w/2-(a.x+a.w/2), dy=b.y+b.h/2-(a.y+a.h/2);
+        const d=Math.hypot(dx,dy)||.01;
+        const overlap=Math.max(12,Math.min(a.w,a.h)*.34)+Math.max(12,Math.min(b.w,b.h)*.34)-d;
+        if (overlap>0) {
+          const nx=dx/d, ny=dy/d, push=overlap*.52;
+          a.x-=nx*push; a.y-=ny*push; b.x+=nx*push; b.y+=ny*push;
+          const rel=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;
+          if (rel<0) { const impulse=-rel*.78; a.vx-=impulse*nx; a.vy-=impulse*ny; b.vx+=impulse*nx; b.vy+=impulse*ny; }
         }
       }
-
       physicsItems.forEach(item => {
-        item.el.style.setProperty('left', item.x + 'px', 'important');
-        item.el.style.setProperty('top', item.y + 'px', 'important');
-        item.el.style.setProperty('transform', 'rotate(' + item.angle + 'rad)', 'important');
+        item.el.style.setProperty('left',item.x+'px','important');
+        item.el.style.setProperty('top',item.y+'px','important');
+        item.el.style.setProperty('transform','rotate('+item.angle+'rad)','important');
       });
-      animationFrame = requestAnimationFrame(tick);
+      animationFrame=requestAnimationFrame(tick);
     }
-    animationFrame = requestAnimationFrame(tick);
+    animationFrame=requestAnimationFrame(tick);
   }
-
   function openFrame(url, title) {
-    frame.title = title;
-    frame.src = url;
-    modal.hidden = false;
-    closeButton.focus();
+    video.pause(); video.hidden = true; frame.hidden = false;
+    frame.title=title; frame.src=url; modal.hidden=false; closeButton.focus();
   }
-
   function openSansFight() {
-    openFrame('https://jcw87.github.io/c2-sans-fight/', 'Sans fight');
+    openFrame('https://jcw87.github.io/c2-sans-fight/','Sans fight');
   }
-
   function openRickroll() {
-    openFrame('https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?autoplay=1&rel=0', 'A totally normal video');
+    frame.src='about:blank'; frame.hidden=true; video.hidden=false;
+    video.src='./assets/rickroll.mp4'; video.currentTime=0;
+    modal.hidden=false; closeButton.focus();
+    const playback=video.play();
+    if (playback && playback.catch) playback.catch(() => showToast('Tap play if your browser blocked autoplay.'));
   }
-
   function closeFrame() {
-    modal.hidden = true;
-    frame.src = 'about:blank';
-    button.focus();
+    modal.hidden=true; frame.src='about:blank';
+    video.pause(); video.removeAttribute('src'); video.load(); video.hidden=true;
+    frame.hidden=false; button.focus();
   }
-
   function randomColor() {
-    return 'hsl(' + Math.floor(Math.random() * 360) + ' 100% ' +
-      (Math.random() < 0.5 ? '45%' : '62%') + ')';
+    return 'hsl('+Math.floor(Math.random()*360)+' 90% '+(Math.random()<.5?'38%':'72%')+')';
   }
-
   function startDisco() {
-    stopPhysics();
-    clearInterval(discoInterval);
-    clearTimeout(discoTimeout);
-    discoStyles = Array.from(document.querySelectorAll('body, body *'))
-      .filter(el => !el.closest('.chaos-modal, .chaos-toast'))
-      .map(el => ({ el, style: el.style.cssText }));
-    const flash = () => {
-      discoStyles.forEach(({el}) => {
-        const color = randomColor();
-        el.style.setProperty('color', color, 'important');
-        el.style.setProperty('background-color', randomColor(), 'important');
-        el.style.setProperty('border-color', randomColor(), 'important');
-        el.style.setProperty('outline-color', randomColor(), 'important');
-        el.style.setProperty('text-shadow', '0 0 9px ' + color, 'important');
-      });
-    };
-    flash();
-    discoInterval = setInterval(flash, 115);
-    showToast('DISCO MODE. YOUR EYEBALLS HAVE ENTERED THE CHAT.');
-    discoTimeout = setTimeout(() => {
-      clearInterval(discoInterval);
-      discoStyles.forEach(({el, style}) => { el.style.cssText = style; });
-      discoStyles = [];
-      showToast('The disco has been shut down by local authorities.');
-    }, 7000);
+    stopPhysics(); clearEffects();
+    discoStyles=Array.from(document.querySelectorAll('body, body *'))
+      .filter(el=>!el.closest('.chaos-modal, .chaos-toast'))
+      .map(el=>({el,style:el.style.cssText}));
+    const recolor=()=>discoStyles.forEach(({el})=>{
+      el.style.setProperty('color',randomColor(),'important');
+      el.style.setProperty('background-color',randomColor(),'important');
+      el.style.setProperty('border-color',randomColor(),'important');
+      el.style.setProperty('text-shadow','0 0 8px '+randomColor(),'important');
+    });
+    recolor();
+    // Random colour changes are deliberately paced rather than rapid strobing.
+    discoInterval=setInterval(recolor,650);
+    showToast('DISCO MODE. THE CSS HAS LEFT THE BUILDING.');
+    discoTimeout=setTimeout(()=>{clearInterval(discoInterval);discoStyles.forEach(({el,style})=>el.style.cssText=style);discoStyles=[];showToast('Disco closed.');},8000);
   }
-
   function swapEverything() {
-    stopPhysics();
-    clearTimeout(swapTimeout);
-    const elements = getFloatingElements();
-    const positions = elements.map(el => {
-      const r = el.getBoundingClientRect();
-      return { x: r.left, y: r.top, w: r.width, h: r.height };
+    stopPhysics(); clearEffects();
+    const elements=getFloatingElements();
+    const positions=elements.map(el=>{const r=el.getBoundingClientRect();return{x:r.left,y:r.top,w:r.width,h:r.height};});
+    for(let i=positions.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[positions[i],positions[j]]=[positions[j],positions[i]];}
+    swapStyles=elements.map(el=>({el,style:el.style.cssText}));
+    elements.forEach((el,i)=>{
+      const p=positions[i];
+      ['position','fixed','important'];
+      el.style.setProperty('position','fixed','important'); el.style.setProperty('left',p.x+'px','important');
+      el.style.setProperty('top',p.y+'px','important'); el.style.setProperty('width',p.w+'px','important');
+      el.style.setProperty('height',p.h+'px','important'); el.style.setProperty('margin','0','important');
+      el.style.setProperty('z-index',el.classList.contains('chaos-button')?'10000':String(100+i),'important');
+      el.style.setProperty('transition','left .35s ease, top .35s ease','important');
     });
-    for (let i = positions.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [positions[i], positions[j]] = [positions[j], positions[i]];
+    showToast('Element shuffle! The button is in the mix.');
+    swapTimeout=setTimeout(()=>{swapStyles.forEach(({el,style})=>el.style.cssText=style);swapStyles=[];showToast('The universe has been reassembled.');},6500);
+  }
+  function temporaryClass(name, duration, message) {
+    clearEffects(); document.body.classList.add(name);
+    showToast(message);
+    later(()=>document.body.classList.remove(name),duration);
+  }
+  function confetti() {
+    const emojis=['🎉','🧀','🐸','💀','✨','🍩','🦆'];
+    for(let i=0;i<42;i++){
+      const bit=document.createElement('span'); bit.className='chaos-confetti';
+      bit.textContent=emojis[Math.floor(Math.random()*emojis.length)];
+      bit.style.left=Math.random()*100+'vw'; bit.style.animationDelay=Math.random()*.8+'s';
+      bit.style.setProperty('--drift',(Math.random()*240-120)+'px');
+      document.body.appendChild(bit);
+      later(()=>bit.remove(),4300);
     }
-    swapStyles = elements.map(el => ({ el, style: el.style.cssText }));
-    elements.forEach((el, index) => {
-      const p = positions[index];
-      el.style.setProperty('position', 'fixed', 'important');
-      el.style.setProperty('left', p.x + 'px', 'important');
-      el.style.setProperty('top', p.y + 'px', 'important');
-      el.style.setProperty('width', p.w + 'px', 'important');
-      el.style.setProperty('height', p.h + 'px', 'important');
-      el.style.setProperty('margin', '0', 'important');
-      el.style.setProperty('z-index', el.classList.contains('chaos-button') ? '10000' : String(100 + index), 'important');
-      el.style.setProperty('transition', 'left .35s ease, top .35s ease', 'important');
-    });
-    showToast('The website has shuffled its atoms.');
-    swapTimeout = setTimeout(() => {
-      swapStyles.forEach(({el, style}) => { el.style.cssText = style; });
-      swapStyles = [];
-      showToast('The universe has been put back (mostly).');
-    }, 6500);
+    showToast('A completely unrequested celebration.');
   }
-
-  function mirrorMode() {
-    document.body.classList.add('chaos-mirror');
-    clearTimeout(mirrorTimeout);
-    mirrorTimeout = setTimeout(() => document.body.classList.remove('chaos-mirror'), 5500);
-    showToast('Mirror universe. You look different.');
+  function sillyText() {
+    const nodes=Array.from(document.querySelectorAll('h1,h2,p,a,.eyebrow, .project-language'))
+      .filter(el=>!el.closest('.chaos-modal'));
+    const originals=nodes.map(el=>({el,text:el.textContent}));
+    const words=['beep boop','certified potato','goober mode','the council says no','bonk','among the pixels','where am I'];
+    nodes.forEach(el=>{if(el.textContent.trim())el.textContent=words[Math.floor(Math.random()*words.length)];});
+    showToast('The website has temporarily forgotten English.');
+    later(()=>originals.forEach(({el,text})=>el.textContent=text),5500);
   }
-
   function runRandomThing() {
-    if (physicsItems.length) {
-      stopPhysics();
-      showToast('Reality restored.');
-      return;
-    }
-    const choice = Math.floor(Math.random() * 8);
-    if (choice === 0) openSansFight();
-    else if (choice === 1) startPhysics();
-    else if (choice === 2) startDisco();
-    else if (choice === 3) openRickroll();
-    else if (choice === 4) swapEverything();
-    else if (choice === 5) mirrorMode();
-    else if (choice === 6) {
-      const messages = [
-        'Your computer has been diagnosed with silly.',
-        'A small goblin has been assigned to your browser.',
-        'The website would like to know why you are like this.',
-        'Error 418: I am a goofy little website.',
-        'Achievement unlocked: clicked the suspicious button.'
-      ];
-      showToast(messages[Math.floor(Math.random() * messages.length)]);
-    }
-    // The eighth option deliberately does absolutely nothing.
+    if(physicsItems.length){stopPhysics();showToast('Reality restored.');return;}
+    const choice=Math.floor(Math.random()*13);
+    if(choice===0) openSansFight();
+    else if(choice===1) startPhysics();
+    else if(choice===2) startDisco();
+    else if(choice===3) openRickroll();
+    else if(choice===4) swapEverything();
+    else if(choice===5) temporaryClass('chaos-mirror',5500,'Mirror universe. Left is now right.');
+    else if(choice===6) temporaryClass('chaos-spin',4200,'The whole website is doing a little spin.');
+    else if(choice===7) temporaryClass('chaos-bounce',5000,'The website has consumed 14 energy drinks.');
+    else if(choice===8) temporaryClass('chaos-invert',5000,'Negative mode. Very mysterious.');
+    else if(choice===9) temporaryClass('chaos-big',4500,'BIG WEBSITE. BIG RESPONSIBILITY.');
+    else if(choice===10) confetti();
+    else if(choice===11) sillyText();
+    // The thirteenth option does absolutely nothing. As nature intended.
   }
-
-  button.addEventListener('click', runRandomThing);
-  closeButton.addEventListener('click', closeFrame);
-  modal.addEventListener('click', event => {
-    if (event.target === modal) closeFrame();
-  });
-  document.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && !modal.hidden) closeFrame();
-  });
-  document.addEventListener('pointermove', event => {
-    pointer = { x: event.clientX, y: event.clientY, active: true };
-  });
-  document.addEventListener('pointerleave', () => { pointer.active = false; });
-  window.addEventListener('resize', () => {
-    if (physicsItems.length) {
-      stopPhysics();
-      showToast('Window resized. Physics safely reset.');
-    }
-  });
+  button.addEventListener('click',runRandomThing);
+  closeButton.addEventListener('click',closeFrame);
+  modal.addEventListener('click',event=>{if(event.target===modal)closeFrame();});
+  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!modal.hidden)closeFrame();});
+  document.addEventListener('pointermove',event=>{pointer={x:event.clientX,y:event.clientY,active:true};});
+  document.addEventListener('pointerleave',()=>{pointer.active=false;});
+  window.addEventListener('resize',()=>{if(physicsItems.length){stopPhysics();showToast('Window resized. Physics reset.');}});
 })();
 </script>
 </body>

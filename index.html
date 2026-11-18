@@ -6,9 +6,19 @@
   <meta name="theme-color" content="#ffffff">
   <meta name="description" content="Equinox's personal website — projects, code, and things I'm learning.">
   <title>Equinox — Developer</title>
-  <link rel="stylesheet" href="./css/style.css?v=10">
+  <link rel="stylesheet" href="./css/style.css?v=11">
 </head>
 <body>
+  <button class="chaos-button" type="button" aria-label="Open the chaos button" title="Do not press this button.">
+    <img src="./assets/button.jpg" alt="" width="56" height="56">
+  </button>
+  <div class="chaos-modal" hidden role="dialog" aria-modal="true" aria-label="A very important game">
+    <div class="chaos-dialog">
+      <button class="chaos-close" type="button" aria-label="Close game">×</button>
+      <iframe class="chaos-frame" title="Sans fight" src="about:blank" allow="fullscreen; gamepad; autoplay" allowfullscreen></iframe>
+    </div>
+  </div>
+  <div class="chaos-toast" role="status" aria-live="polite"></div>
   <main id="home">
     <section class="hero page-width">
       <div class="hero-photo">
@@ -92,5 +102,209 @@
     <span>© Equinox</span>
     <a href="#home">Back to top ↑</a>
   </footer>
+
+<script>
+(() => {
+  const button = document.querySelector('.chaos-button');
+  const modal = document.querySelector('.chaos-modal');
+  const closeButton = document.querySelector('.chaos-close');
+  const toast = document.querySelector('.chaos-toast');
+  const frame = document.querySelector('.chaos-frame');
+  let physicsItems = [];
+  let animationFrame = 0;
+  let lastFrame = 0;
+  let pointer = { x: -1000, y: -1000, active: false };
+  let toastTimer = 0;
+  let discoTimer = 0;
+
+  function showToast(message) {
+    toast.textContent = message;
+    toast.classList.add('is-visible');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('is-visible'), 2600);
+  }
+
+  function stopPhysics() {
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
+    physicsItems.forEach(item => { item.el.style.cssText = item.originalStyle; });
+    physicsItems = [];
+    lastFrame = 0;
+    button.classList.remove('is-chaotic');
+    button.setAttribute('aria-label', 'Open the chaos button');
+  }
+
+  function startPhysics() {
+    stopPhysics();
+    const selector = 'img, h1, h2, p, a, .ticker-item, .project-card, .eyebrow, .site-footer span';
+    const candidates = Array.from(document.querySelectorAll(selector));
+    const visible = candidates.filter(el => {
+      const rect = el.getBoundingClientRect();
+      const style = getComputedStyle(el);
+      return rect.width > 4 && rect.height > 4 &&
+        style.display !== 'none' && style.visibility !== 'hidden' &&
+        Number(style.opacity) > 0;
+    });
+    const objects = visible.filter(el => !visible.some(other => other !== el && other.contains(el)));
+
+    physicsItems = objects.map((el, index) => {
+      const rect = el.getBoundingClientRect();
+      const originalStyle = el.style.cssText;
+      el.style.setProperty('position', 'fixed', 'important');
+      el.style.setProperty('left', rect.left + 'px', 'important');
+      el.style.setProperty('top', rect.top + 'px', 'important');
+      el.style.setProperty('width', rect.width + 'px', 'important');
+      el.style.setProperty('height', rect.height + 'px', 'important');
+      el.style.setProperty('margin', '0', 'important');
+      el.style.setProperty('transform', 'none', 'important');
+      el.style.setProperty('transition', 'none', 'important');
+      el.style.setProperty('z-index', String(100 + index), 'important');
+      el.style.setProperty('pointer-events', 'auto', 'important');
+      return {
+        el, originalStyle, x: rect.left, y: rect.top,
+        w: rect.width, h: rect.height,
+        vx: (Math.random() - 0.5) * 260,
+        vy: (Math.random() - 0.5) * 180,
+        angle: 0, spin: (Math.random() - 0.5) * 2.8
+      };
+    });
+
+    button.classList.add('is-chaotic');
+    button.setAttribute('aria-label', 'Stop the chaos and reset the page');
+    showToast('PHYSICS HAS BEEN ENABLED. good luck.');
+
+    function tick(timestamp) {
+      if (!physicsItems.length) return;
+      const dt = Math.min((timestamp - (lastFrame || timestamp)) / 1000, 0.032);
+      lastFrame = timestamp;
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const gravity = 1450;
+
+      physicsItems.forEach(item => {
+        item.vy += gravity * dt;
+        item.x += item.vx * dt;
+        item.y += item.vy * dt;
+        item.angle += item.spin * dt;
+
+        if (item.x < 0) { item.x = 0; item.vx = Math.abs(item.vx) * 0.82; }
+        if (item.x + item.w > width) { item.x = width - item.w; item.vx = -Math.abs(item.vx) * 0.82; }
+        if (item.y < 0) { item.y = 0; item.vy = Math.abs(item.vy) * 0.78; }
+        if (item.y + item.h > height) {
+          item.y = height - item.h;
+          item.vy = -Math.abs(item.vy) * 0.72;
+          item.vx *= 0.985;
+          if (Math.abs(item.vy) < 42) item.vy = -90 - Math.random() * 80;
+        }
+
+        if (pointer.active) {
+          const cx = item.x + item.w / 2;
+          const cy = item.y + item.h / 2;
+          const dx = cx - pointer.x;
+          const dy = cy - pointer.y;
+          const distance = Math.hypot(dx, dy) || 1;
+          const reach = 105;
+          if (distance < reach) {
+            const force = (reach - distance) / reach;
+            item.vx += (dx / distance) * force * 1900 * dt;
+            item.vy += (dy / distance) * force * 1900 * dt;
+          }
+        }
+      });
+
+      for (let i = 0; i < physicsItems.length; i++) {
+        for (let j = i + 1; j < physicsItems.length; j++) {
+          const a = physicsItems[i], b = physicsItems[j];
+          const ax = a.x + a.w / 2, ay = a.y + a.h / 2;
+          const bx = b.x + b.w / 2, by = b.y + b.h / 2;
+          const dx = bx - ax, dy = by - ay;
+          const distance = Math.hypot(dx, dy) || 0.01;
+          const ar = Math.max(12, Math.min(a.w, a.h) * 0.34);
+          const br = Math.max(12, Math.min(b.w, b.h) * 0.34);
+          const overlap = ar + br - distance;
+          if (overlap > 0) {
+            const nx = dx / distance, ny = dy / distance;
+            const push = overlap * 0.52;
+            a.x -= nx * push; a.y -= ny * push;
+            b.x += nx * push; b.y += ny * push;
+            const relative = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+            if (relative < 0) {
+              const impulse = -relative * 0.78;
+              a.vx -= impulse * nx; a.vy -= impulse * ny;
+              b.vx += impulse * nx; b.vy += impulse * ny;
+            }
+          }
+        }
+      }
+
+      physicsItems.forEach(item => {
+        item.el.style.setProperty('left', item.x + 'px', 'important');
+        item.el.style.setProperty('top', item.y + 'px', 'important');
+        item.el.style.setProperty('transform', 'rotate(' + item.angle + 'rad)', 'important');
+      });
+      animationFrame = requestAnimationFrame(tick);
+    }
+    animationFrame = requestAnimationFrame(tick);
+  }
+
+  function openSansFight() {
+    frame.src = 'https://jcw87.github.io/c2-sans-fight/';
+    modal.hidden = false;
+    closeButton.focus();
+  }
+
+  function closeSansFight() {
+    modal.hidden = true;
+    frame.src = 'about:blank';
+    button.focus();
+  }
+
+  function runRandomThing() {
+    if (physicsItems.length) {
+      stopPhysics();
+      showToast('Reality has been restored. for now.');
+      return;
+    }
+    const choice = Math.floor(Math.random() * 5);
+    if (choice === 0) {
+      openSansFight();
+    } else if (choice === 1) {
+      startPhysics();
+    } else if (choice === 2) {
+      document.body.classList.add('chaos-disco');
+      clearTimeout(discoTimer);
+      discoTimer = setTimeout(() => document.body.classList.remove('chaos-disco'), 6500);
+      showToast('disco mode activated. absolutely no reason.');
+    } else if (choice === 3) {
+      const messages = [
+        'Your computer has been diagnosed with silly.',
+        'A small goblin has been assigned to your browser.',
+        'The website would like to know why you are like this.',
+        'Error 418: I am a goofy little website.',
+        'Achievement unlocked: clicked the suspicious button.'
+      ];
+      showToast(messages[Math.floor(Math.random() * messages.length)]);
+    } else {
+      // Nothing happens. This is intentional.
+    }
+  }
+
+  button.addEventListener('click', runRandomThing);
+  closeButton.addEventListener('click', closeSansFight);
+  modal.addEventListener('click', event => {
+    if (event.target === modal) closeSansFight();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !modal.hidden) closeSansFight();
+  });
+  document.addEventListener('pointermove', event => {
+    pointer = { x: event.clientX, y: event.clientY, active: true };
+  });
+  document.addEventListener('pointerleave', () => { pointer.active = false; });
+  window.addEventListener('resize', () => {
+    if (physicsItems.length) stopPhysics();
+  });
+})();
+</script>
 </body>
 </html>

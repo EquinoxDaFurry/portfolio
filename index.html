@@ -189,20 +189,28 @@
       el.style.setProperty('margin', '0', 'important');
       el.style.setProperty('transform', 'none', 'important');
       el.style.setProperty('transition', 'none', 'important');
-      el.style.setProperty('z-index', el.classList.contains('chaos-button') ? '10000' : String(100 + index), 'important');
+      el.style.setProperty('z-index', String(100 + Math.floor(Math.random() * (physicsItems.length + 1))), 'important');
       return { el, originalStyle, x:r.left, y:r.top, w:r.width, h:r.height,
         vx:(Math.random()-.5)*260, vy:(Math.random()-.5)*180,
         angle:0, spin:(Math.random()-.5)*2.8 };
     });
     physicsRestoreClick = event => {
       if (!physicsItems.length) return;
-      event.preventDefault(); event.stopImmediatePropagation();
-      stopPhysics(); showToast('Reality restored. Excellent clicking.');
+      const pressedChaosButton = event.target.closest('.chaos-button');
+      if (!pressedChaosButton) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      stopPhysics();
+      showToast('You found the button in the pile. Reality restored.');
     };
     document.addEventListener('click', physicsRestoreClick, true);
     button.classList.add('is-chaotic');
-    button.setAttribute('aria-label', 'Click any flying object to restore the page');
-    showToast('PHYSICS MODE: click ANY flying object to restore reality.');
+    button.setAttribute('aria-label', 'Find and click this button in the flying pile to restore the page');
+    showToast('PHYSICS MODE: find the chaos button in the pile and click THAT to restore reality.');
     function tick(timestamp) {
       if (!physicsItems.length) return;
       const dt = Math.min((timestamp-(lastFrame||timestamp))/1000,.032);
@@ -301,6 +309,26 @@
     showToast('Element shuffle! The button is in the mix.');
     swapTimeout=setTimeout(()=>{swapStyles.forEach(({el,style})=>el.style.cssText=style);swapStyles=[];showToast('The universe has been reassembled.');},6500);
   }
+  function spinWebsite() {
+    clearEffects();
+    document.body.classList.add('chaos-spin');
+    showToast('TWO FULL ROTATIONS. PLEASE KEEP YOUR HANDS INSIDE THE WEBSITE.');
+    later(() => document.body.classList.remove('chaos-spin'), 2700);
+  }
+  function relocateButton() {
+    const margin = 14;
+    const maxX = Math.max(margin, innerWidth - button.offsetWidth - margin);
+    const maxY = Math.max(margin, innerHeight - button.offsetHeight - margin);
+    const x = margin + Math.random() * (maxX - margin);
+    const y = margin + Math.random() * (maxY - margin);
+    button.style.position = 'fixed';
+    button.style.left = x + 'px';
+    button.style.top = y + 'px';
+    button.style.right = 'auto';
+    button.style.bottom = 'auto';
+    button.style.transform = 'none';
+    showToast('The button has moved house. Permanently. Good luck.');
+  }
   function temporaryClass(name, duration, message) {
     clearEffects(); document.body.classList.add(name);
     showToast(message);
@@ -373,6 +401,7 @@
       'spin','spin','spin',
       'bounce','bounce','bounce',
       'swirl','swirl','swirl',
+      'relocate','relocate',
       'shuffle','mirror','invert','big','confetti',
       'rickroll','sans','nothing'
     ];
@@ -380,7 +409,8 @@
     if(choice==='sans') openSansFight();
     else if(choice==='physics') startPhysics();
     else if(choice==='disco') startDisco();
-    else if(choice==='spin') temporaryClass('chaos-spin',4200,'The whole website is doing a little spin.');
+    else if(choice==='spin') spinWebsite();
+    else if(choice==='relocate') relocateButton();
     else if(choice==='bounce') temporaryClass('chaos-bounce',5000,'The website has consumed 14 energy drinks.');
     else if(choice==='swirl') temporaryClass('chaos-swirl',6000,'THE PAGE IS BEING BLENDED. PLEASE STAND BY.');
     else if(choice==='pinball') startAmongUsPinball();

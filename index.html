@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#ffffff">
   <meta name="description" content="Equinox's personal website — projects, code, and things I'm learning.">
   <title>Equinox — Developer</title>
-  <link rel="stylesheet" href="./css/style.css?v=16">
+  <link rel="stylesheet" href="./css/style.css?v=17">
 </head>
 <body>
   <button class="chaos-button" type="button" aria-label="Open the chaos button" title="Do not press this button.">
@@ -115,7 +115,7 @@
   backgroundAudio.loop = true;
   backgroundAudio.volume = 0.28;
   let soundtrackStarted = false;
-  let pinballCleanup = null;
+  let pinballInstances = [];
   let physicsItems = [], animationFrame = 0, lastFrame = 0;
   let pointer = { x: -1000, y: -1000, active: false };
   let toastTimer = 0, discoInterval = 0, discoTimeout = 0;
@@ -141,7 +141,6 @@
     clearTimeout(swapTimeout);
     clearTimeout(mirrorTimeout);
     document.body.classList.remove('chaos-mirror', 'chaos-spin', 'chaos-bounce', 'chaos-invert', 'chaos-big', 'chaos-swirl');
-    if (pinballCleanup) { pinballCleanup(); pinballCleanup = null; }
     document.querySelectorAll('.chaos-confetti').forEach(el => el.remove());
     if (discoStyles.length) {
       discoStyles.forEach(({el, style}) => { el.style.cssText = style; });
@@ -356,7 +355,6 @@
     later(()=>originals.forEach(({el,html})=>el.innerHTML=html),5500);
   }
   function startAmongUsPinball() {
-    clearEffects();
     const crewmate = document.createElement('img');
     crewmate.className = 'chaos-amongus';
     crewmate.src = './assets/amongus.jpg';
@@ -384,11 +382,27 @@
     const finish = setTimeout(() => {
       cancelAnimationFrame(raf);
       crewmate.remove();
-      if (pinballCleanup) pinballCleanup = null;
+      pinballInstances = pinballInstances.filter(instance => instance.element !== crewmate);
       showToast('The crewmate has left the arena.');
     }, 15000);
-    pinballCleanup = () => { cancelAnimationFrame(raf); clearTimeout(finish); crewmate.remove(); };
+    pinballInstances.push({ element: crewmate, stop: () => { cancelAnimationFrame(raf); clearTimeout(finish); crewmate.remove(); } });
     showToast('SUS PINBALL. BOUNCE, LITTLE CREWMATE, BOUNCE.');
+  }
+  function startRareAmongUsReveal() {
+    const overlay = document.createElement('div');
+    overlay.className = 'chaos-amongus-reveal';
+    const image = document.createElement('img');
+    image.src = './assets/amongus2.jpg';
+    image.alt = 'A mysterious Among Us crewmate';
+    const message = document.createElement('div');
+    message.className = 'chaos-amongus-message';
+    message.textContent = 'they will NEVER believe you';
+    overlay.append(image, message);
+    document.body.appendChild(overlay);
+    showToast('...');
+    const remove = () => overlay.remove();
+    overlay.addEventListener('click', remove, { once: true });
+    later(remove, 9000);
   }
   function runRandomThing() {
     if(physicsItems.length){stopPhysics();showToast('Reality restored.');return;}
@@ -402,6 +416,7 @@
       'bounce','bounce','bounce',
       'swirl','swirl','swirl',
       'relocate','relocate',
+      'amongus-reveal',
       'shuffle','mirror','invert','big','confetti',
       'rickroll','sans','nothing'
     ];
@@ -411,6 +426,7 @@
     else if(choice==='disco') startDisco();
     else if(choice==='spin') spinWebsite();
     else if(choice==='relocate') relocateButton();
+    else if(choice==='amongus-reveal') startRareAmongUsReveal();
     else if(choice==='bounce') temporaryClass('chaos-bounce',5000,'The website has consumed 14 energy drinks.');
     else if(choice==='swirl') temporaryClass('chaos-swirl',6000,'THE PAGE IS BEING BLENDED. PLEASE STAND BY.');
     else if(choice==='pinball') startAmongUsPinball();
@@ -424,6 +440,16 @@
     // Sometimes the button does absolutely nothing. A feature, not a bug.
   }
   button.addEventListener('click',runRandomThing);
+  document.querySelectorAll('.ticker-item img[alt="Rust"]').forEach(icon => {
+    icon.closest('.ticker-item').style.cursor = 'pointer';
+    icon.closest('.ticker-item').addEventListener('click', startRareAmongUsReveal);
+    icon.closest('.ticker-item').setAttribute('role', 'button');
+    icon.closest('.ticker-item').setAttribute('tabindex', '0');
+    icon.closest('.ticker-item').setAttribute('aria-label', 'Trigger the mysterious Among Us event');
+    icon.closest('.ticker-item').addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); startRareAmongUsReveal(); }
+    });
+  });
   closeButton.addEventListener('click',closeFrame);
   modal.addEventListener('click',event=>{if(event.target===modal)closeFrame();});
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!modal.hidden)closeFrame();});

@@ -316,11 +316,11 @@
   function sillyText() {
     const nodes=Array.from(document.querySelectorAll('h1,h2,p,a,.eyebrow, .project-language'))
       .filter(el=>!el.closest('.chaos-modal'));
-    const originals=nodes.map(el=>({el,text:el.textContent}));
+    const originals=nodes.map(el=>({el,html:el.innerHTML}));
     const words=['beep boop','certified potato','goober mode','the council says no','bonk','among the pixels','where am I'];
     nodes.forEach(el=>{if(el.textContent.trim())el.textContent=words[Math.floor(Math.random()*words.length)];});
     showToast('The website has temporarily forgotten English.');
-    later(()=>originals.forEach(({el,text})=>el.textContent=text),5500);
+    later(()=>originals.forEach(({el,html})=>el.innerHTML=html),5500);
   }
   function runRandomThing() {
     if(physicsItems.length){stopPhysics();showToast('Reality restored.');return;}

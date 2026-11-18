@@ -353,8 +353,6 @@ body.chaos-mirror .chaos-button {
   transform: scaleX(-1);
 }
 
-.chaos-video { width:100%; height:100%; object-fit:contain; background:#000; border-radius:6px; }
-.chaos-video[hidden] { display:none; }
 body.chaos-spin main, body.chaos-spin footer { animation: chaos-whole-spin 1.4s ease-in-out infinite alternate; transform-origin:center; }
 @keyframes chaos-whole-spin { from { transform:rotate(-2deg) scale(.98); } to { transform:rotate(2deg) scale(1.02); } }
 body.chaos-bounce main, body.chaos-bounce footer { animation: chaos-bounce-page .55s ease-in-out infinite alternate; }
@@ -363,3 +361,28 @@ body.chaos-invert { filter:invert(1) hue-rotate(180deg); }
 body.chaos-big main { transform:scale(1.12); transform-origin:top center; }
 .chaos-confetti { position:fixed; top:-48px; z-index:15000; font-size:26px; pointer-events:none; animation:chaos-confetti-fall 3.5s ease-in forwards; }
 @keyframes chaos-confetti-fall { to { transform:translate3d(var(--drift),110vh,0) rotate(900deg); } }
+
+
+/* Swirl mode: sections orbit and wobble at different timings. */
+body.chaos-swirl main > section {
+  transform-origin: 50% 50%;
+  animation: chaos-swirl-wobble 1.9s ease-in-out infinite alternate;
+}
+body.chaos-swirl main > section:nth-child(2n) { animation-delay: -.65s; }
+body.chaos-swirl main > section:nth-child(3n) { animation-delay: -1.2s; }
+@keyframes chaos-swirl-wobble {
+  from { transform: perspective(900px) rotate(-3deg) scale(.97) skewY(-1deg); }
+  to { transform: perspective(900px) rotate(3deg) scale(1.025) skewY(1deg); }
+}
+.chaos-amongus {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 18000;
+  display: block;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  will-change: transform;
+  filter: drop-shadow(0 5px 8px rgba(0,0,0,.22));
+}

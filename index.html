@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#ffffff">
   <meta name="description" content="Equinox's personal website — projects, code, and things I'm learning.">
   <title>Equinox — Developer</title>
-  <link rel="stylesheet" href="./css/style.css?v=13">
+  <link rel="stylesheet" href="./css/style.css?v=14">
 </head>
 <body>
   <button class="chaos-button" type="button" aria-label="Open the chaos button" title="Do not press this button.">
@@ -16,7 +16,6 @@
     <div class="chaos-dialog">
       <button class="chaos-close" type="button" aria-label="Close game">×</button>
       <iframe class="chaos-frame" title="Sans fight" src="about:blank" allow="fullscreen; gamepad; autoplay" allowfullscreen></iframe>
-      <video class="chaos-video" hidden controls playsinline preload="auto"></video>
     </div>
   </div>
   <div class="chaos-toast" role="status" aria-live="polite"></div>
@@ -111,7 +110,10 @@
   const closeButton = document.querySelector('.chaos-close');
   const toast = document.querySelector('.chaos-toast');
   const frame = document.querySelector('.chaos-frame');
-  const video = document.querySelector('.chaos-video');
+  const backgroundAudio = new Audio('./assets/rickroll.mp3');
+  backgroundAudio.preload = 'auto';
+  backgroundAudio.volume = 0.72;
+  let pinballCleanup = null;
   let physicsItems = [], animationFrame = 0, lastFrame = 0;
   let pointer = { x: -1000, y: -1000, active: false };
   let toastTimer = 0, discoInterval = 0, discoTimeout = 0;
@@ -136,7 +138,8 @@
     clearTimeout(discoTimeout);
     clearTimeout(swapTimeout);
     clearTimeout(mirrorTimeout);
-    document.body.classList.remove('chaos-mirror', 'chaos-spin', 'chaos-bounce', 'chaos-invert', 'chaos-big');
+    document.body.classList.remove('chaos-mirror', 'chaos-spin', 'chaos-bounce', 'chaos-invert', 'chaos-big', 'chaos-swirl');
+    if (pinballCleanup) { pinballCleanup(); pinballCleanup = null; }
     document.querySelectorAll('.chaos-confetti').forEach(el => el.remove());
     if (discoStyles.length) {
       discoStyles.forEach(({el, style}) => { el.style.cssText = style; });
@@ -240,22 +243,21 @@
     animationFrame=requestAnimationFrame(tick);
   }
   function openFrame(url, title) {
-    video.pause(); video.hidden = true; frame.hidden = false;
+    frame.hidden = false;
     frame.title=title; frame.src=url; modal.hidden=false; closeButton.focus();
   }
   function openSansFight() {
     openFrame('https://jcw87.github.io/c2-sans-fight/','Sans fight');
   }
-  function openRickroll() {
-    frame.src='about:blank'; frame.hidden=true; video.hidden=false;
-    video.src='./assets/rickroll.mp4'; video.currentTime=0;
-    modal.hidden=false; closeButton.focus();
-    const playback=video.play();
-    if (playback && playback.catch) playback.catch(() => showToast('Tap play if your browser blocked autoplay.'));
+  function playRickroll() {
+    backgroundAudio.pause();
+    backgroundAudio.currentTime = 0;
+    const playback = backgroundAudio.play();
+    showToast('A surprise soundtrack has entered the chat.');
+    if (playback && playback.catch) playback.catch(() => showToast('Your browser blocked autoplay. Tap the chaos button again to retry.'));
   }
   function closeFrame() {
     modal.hidden=true; frame.src='about:blank';
-    video.pause(); video.removeAttribute('src'); video.load(); video.hidden=true;
     frame.hidden=false; button.focus();
   }
   function randomColor() {
@@ -322,22 +324,70 @@
     showToast('The website has temporarily forgotten English.');
     later(()=>originals.forEach(({el,html})=>el.innerHTML=html),5500);
   }
+  function startAmongUsPinball() {
+    clearEffects();
+    const crewmate = document.createElement('img');
+    crewmate.className = 'chaos-amongus';
+    crewmate.src = './assets/amongus.jpg';
+    crewmate.alt = 'Among Us crewmate bouncing around the page';
+    crewmate.draggable = false;
+    document.body.appendChild(crewmate);
+    const size = Math.min(112, Math.max(64, innerWidth * 0.16));
+    crewmate.style.width = size + 'px';
+    crewmate.style.height = 'auto';
+    let x = Math.random() * Math.max(1, innerWidth - size);
+    let y = Math.random() * Math.max(1, innerHeight - size);
+    let vx = (Math.random() < .5 ? -1 : 1) * (260 + Math.random() * 240);
+    let vy = (Math.random() < .5 ? -1 : 1) * (240 + Math.random() * 220);
+    let angle = 0, spin = 3.5, raf = 0, previous = 0;
+    const move = timestamp => {
+      const dt = Math.min((timestamp - (previous || timestamp)) / 1000, .035);
+      previous = timestamp;
+      x += vx * dt; y += vy * dt; angle += spin * dt;
+      if (x <= 0 || x + size >= innerWidth) { x = Math.max(0, Math.min(innerWidth - size, x)); vx *= -1; spin *= -1; }
+      if (y <= 0 || y + size >= innerHeight) { y = Math.max(0, Math.min(innerHeight - size, y)); vy *= -1; spin *= -1; }
+      crewmate.style.transform = 'translate(' + x + 'px,' + y + 'px) rotate(' + angle + 'rad)';
+      raf = requestAnimationFrame(move);
+    };
+    raf = requestAnimationFrame(move);
+    const finish = setTimeout(() => {
+      cancelAnimationFrame(raf);
+      crewmate.remove();
+      if (pinballCleanup) pinballCleanup = null;
+      showToast('The crewmate has left the arena.');
+    }, 15000);
+    pinballCleanup = () => { cancelAnimationFrame(raf); clearTimeout(finish); crewmate.remove(); };
+    showToast('SUS PINBALL. BOUNCE, LITTLE CREWMATE, BOUNCE.');
+  }
   function runRandomThing() {
     if(physicsItems.length){stopPhysics();showToast('Reality restored.');return;}
-    const choice=Math.floor(Math.random()*13);
-    if(choice===0) openSansFight();
-    else if(choice===1) startPhysics();
-    else if(choice===2) startDisco();
-    else if(choice===3) openRickroll();
-    else if(choice===4) swapEverything();
-    else if(choice===5) temporaryClass('chaos-mirror',5500,'Mirror universe. Left is now right.');
-    else if(choice===6) temporaryClass('chaos-spin',4200,'The whole website is doing a little spin.');
-    else if(choice===7) temporaryClass('chaos-bounce',5000,'The website has consumed 14 energy drinks.');
-    else if(choice===8) temporaryClass('chaos-invert',5000,'Negative mode. Very mysterious.');
-    else if(choice===9) temporaryClass('chaos-big',4500,'BIG WEBSITE. BIG RESPONSIBILITY.');
-    else if(choice===10) confetti();
-    else if(choice===11) sillyText();
-    // The thirteenth option does absolutely nothing. As nature intended.
+    backgroundAudio.pause();
+    const outcomes = [
+      'physics','physics','physics',
+      'disco','disco','disco',
+      'spin','spin','spin',
+      'bounce','bounce','bounce',
+      'swirl','swirl',
+      'pinball','pinball',
+      'shuffle','mirror','invert','big','confetti','silly',
+      'rickroll','sans','nothing'
+    ];
+    const choice = outcomes[Math.floor(Math.random() * outcomes.length)];
+    if(choice==='sans') openSansFight();
+    else if(choice==='physics') startPhysics();
+    else if(choice==='disco') startDisco();
+    else if(choice==='spin') temporaryClass('chaos-spin',4200,'The whole website is doing a little spin.');
+    else if(choice==='bounce') temporaryClass('chaos-bounce',5000,'The website has consumed 14 energy drinks.');
+    else if(choice==='swirl') temporaryClass('chaos-swirl',6000,'THE PAGE IS BEING BLENDED. PLEASE STAND BY.');
+    else if(choice==='pinball') startAmongUsPinball();
+    else if(choice==='rickroll') playRickroll();
+    else if(choice==='shuffle') swapEverything();
+    else if(choice==='mirror') temporaryClass('chaos-mirror',5500,'Mirror universe. Left is now right.');
+    else if(choice==='invert') temporaryClass('chaos-invert',5000,'Negative mode. Very mysterious.');
+    else if(choice==='big') temporaryClass('chaos-big',4500,'BIG WEBSITE. BIG RESPONSIBILITY.');
+    else if(choice==='confetti') confetti();
+    else if(choice==='silly') sillyText();
+    // Sometimes the button does absolutely nothing. A feature, not a bug.
   }
   button.addEventListener('click',runRandomThing);
   closeButton.addEventListener('click',closeFrame);

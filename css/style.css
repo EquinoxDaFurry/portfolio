@@ -345,3 +345,10 @@ body.chaos-disco main {
   .chaos-button, .chaos-toast { transition: none; }
   .chaos-button.is-chaotic, body.chaos-disco, body.chaos-disco main { animation: none; }
 }
+
+/* Mirror universe mode. */
+body.chaos-mirror main,
+body.chaos-mirror footer,
+body.chaos-mirror .chaos-button {
+  transform: scaleX(-1);
+}

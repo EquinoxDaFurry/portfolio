@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#ffffff">
   <meta name="description" content="Equinox's personal website — projects, code, and things I'm learning.">
   <title>Equinox — Developer</title>
-  <link rel="stylesheet" href="./css/style.css?v=14">
+  <link rel="stylesheet" href="./css/style.css?v=15">
 </head>
 <body>
   <button class="chaos-button" type="button" aria-label="Open the chaos button" title="Do not press this button.">
@@ -112,7 +112,9 @@
   const frame = document.querySelector('.chaos-frame');
   const backgroundAudio = new Audio('./assets/rickroll.mp3');
   backgroundAudio.preload = 'auto';
-  backgroundAudio.volume = 0.72;
+  backgroundAudio.loop = true;
+  backgroundAudio.volume = 0.28;
+  let soundtrackStarted = false;
   let pinballCleanup = null;
   let physicsItems = [], animationFrame = 0, lastFrame = 0;
   let pointer = { x: -1000, y: -1000, active: false };
@@ -250,11 +252,12 @@
     openFrame('https://jcw87.github.io/c2-sans-fight/','Sans fight');
   }
   function playRickroll() {
-    backgroundAudio.pause();
-    backgroundAudio.currentTime = 0;
-    const playback = backgroundAudio.play();
-    showToast('A surprise soundtrack has entered the chat.');
-    if (playback && playback.catch) playback.catch(() => showToast('Your browser blocked autoplay. Tap the chaos button again to retry.'));
+    if (!soundtrackStarted) {
+      backgroundAudio.currentTime = 0;
+      const playback = backgroundAudio.play();
+      if (playback && playback.then) playback.then(() => { soundtrackStarted = true; }).catch(() => showToast('Your browser blocked audio. Tap the chaos button again to start the soundtrack.'));
+    }
+    showToast('The soundtrack is now accompanying your browsing.');
   }
   function closeFrame() {
     modal.hidden=true; frame.src='about:blank';
@@ -361,15 +364,16 @@
   }
   function runRandomThing() {
     if(physicsItems.length){stopPhysics();showToast('Reality restored.');return;}
-    backgroundAudio.pause();
+    if (!soundtrackStarted) playRickroll();
     const outcomes = [
+      'pinball','pinball','pinball','pinball','pinball','pinball','pinball','pinball',
+      'silly','silly','silly','silly','silly','silly','silly','silly',
       'physics','physics','physics',
       'disco','disco','disco',
       'spin','spin','spin',
       'bounce','bounce','bounce',
-      'swirl','swirl',
-      'pinball','pinball',
-      'shuffle','mirror','invert','big','confetti','silly',
+      'swirl','swirl','swirl',
+      'shuffle','mirror','invert','big','confetti',
       'rickroll','sans','nothing'
     ];
     const choice = outcomes[Math.floor(Math.random() * outcomes.length)];
